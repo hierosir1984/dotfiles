@@ -27,6 +27,18 @@ in
     enable = true;
     autosuggestion.enable = true;      # ghost text from history
     syntaxHighlighting.enable = true;  # commands turn green when valid
+    # Preserve the existing Keychain-backed 1Password service-account
+    # bootstrap in the generated .zshenv.
+    envExtra = ''
+      # --- 1Password service account token (Keychain-backed) ---
+      # The token itself lives in the macOS login Keychain (service:
+      # op-service-account), not in this file.
+      if [ -z "''${OP_SERVICE_ACCOUNT_TOKEN:-}" ]; then
+        _op_sa="$(/usr/bin/security find-generic-password -a opsa -s op-service-account -w 2>/dev/null)"
+        [ -n "$_op_sa" ] && export OP_SERVICE_ACCOUNT_TOKEN="$_op_sa"
+        unset _op_sa
+      fi
+    '';
     initContent = ''
       if [[ -r "${localConfig}/zshrc" ]]; then
         source "${localConfig}/zshrc"
