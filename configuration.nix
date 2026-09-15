@@ -28,6 +28,9 @@
   nix-homebrew = {
     enable = true;
     inherit user;
+    # Adopt the existing Apple Silicon Homebrew installation instead of
+    # stopping activation when /opt/homebrew is already present.
+    autoMigrate = true;
   };
   homebrew = {
     enable = true;
