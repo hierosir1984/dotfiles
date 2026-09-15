@@ -31,9 +31,12 @@
   };
   homebrew = {
     enable = true;
-    onActivation.cleanup = "zap";  # remove anything not listed here
+    # This is an existing workstation: do not remove undeclared formulae or
+    # casks during activation. We can audit and declare them deliberately later.
+    onActivation.cleanup = "none";
+    # Update Homebrew metadata whenever this configuration is rebuilt. This is
+    # intentionally distinct from unattended `brew upgrade` of every package.
     onActivation.autoUpdate = true;
-    onActivation.extraFlags = [ "--force" ];
     brews = [
       "herdr"
     ];

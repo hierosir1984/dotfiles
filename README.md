@@ -48,7 +48,7 @@ cd dotfiles
 ```
 
 Before you run it: review "Make it yours" below.
-Change the host label or CPU architecture if needed, and read the Homebrew cleanup warning.
+Change the host label or CPU architecture if needed, and read the Homebrew safety notes.
 `bootstrap.sh` applies the config to your machine, so do this first.
 
 ```sh
@@ -93,7 +93,7 @@ No separate build-and-copy step.
 This repo is mine.
 If you clone it, review these before you run `bootstrap.sh`:
 
-- **Username**: run `./bootstrap.sh` (it detects your macOS username and offers to set it) OR change the single `user = "kunchen"` line in `flake.nix`.
+- **Username**: this fork is set to `davidtoniolo`; `./bootstrap.sh` still verifies the configured username against the active macOS account.
   Everything else (`configuration.nix`, `home.nix`, home directory paths) is threaded from that one variable.
 - **Host label** `"mac"`, in three places: `flake.nix` (the `darwinConfigurations."mac"` name), `rebuild.sh:5` (the `#mac` at the end of the flake reference), and `bootstrap.sh`'s first-switch command (also `#mac`).
   All three have to match.
@@ -113,10 +113,10 @@ programs.git = {
 };
 ```
 
-**Homebrew cleanup warning:** `configuration.nix` sets `homebrew.onActivation.cleanup = "zap"`.
-That means every time you switch, Homebrew removes any package or cask on your machine that isn't listed in the `brews` and `casks` arrays in `configuration.nix`.
-If you already have Homebrew stuff installed that isn't in that list, the first switch will uninstall it.
-Read through `brews` and `casks` before you run `bootstrap.sh` or `rebuild.sh` for the first time, and add anything you want to keep.
+**Homebrew safety:** this fork sets `homebrew.onActivation.cleanup = "none"` because it is being applied to an existing workstation.
+Activation will not remove formulae or casks that are not yet declared.
+`onActivation.autoUpdate = true` updates Homebrew metadata during a rebuild; it does not silently upgrade every installed package.
+Inventory and cleanup can be considered later as a separate change.
 
 **About `herdr`:** it's in the `brews` list.
 It's a real public Homebrew formula (`brew info herdr` finds it in homebrew-core, no tap needed), so it will install fine.
@@ -124,8 +124,8 @@ If you don't use it, just remove it from `brews` in your copy.
 
 **Heads-up:**
 
-- `home/AGENTS.md` is my personal agent policy, and `home.nix` installs it for Claude, Codex, and opencode.
-  If you clone this repo, you'd silently inherit my agent instructions - edit or delete `home/AGENTS.md` if you don't want that.
+- `home/AGENTS.md` is the public repository policy used for opencode in this fork.
+  Personal Claude and Codex instructions remain in the untracked `~/.config/dotfiles-local` overlay.
 - The `cc` and `co` shell aliases in `home.nix` are high-agency shortcuts: `claude --dangerously-skip-permissions` and `codex --full-auto`.
   They're convenient for me, but know what they do before you use them.
 
@@ -143,6 +143,7 @@ If you don't use it, just remove it from `brews` in your copy.
 
 The files under `home/` are the real files - editing them here is editing your live config, no rebuild needed to see the change in your editor.
 `home.nix` uses `mkOutOfStoreSymlink` to point paths like `~/.config/nvim` straight at `home/.config/nvim` in this repo, so the two never drift out of sync.
+Personal Claude, Codex, shell, and existing Pi extension state is kept in the untracked `~/.config/dotfiles-local` overlay so it is not published in this public fork.
 You only run `./rebuild.sh` when you change something that isn't just a symlinked file, like a package list or a system default.
 
 ## Optional Pi configuration

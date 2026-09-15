@@ -43,7 +43,63 @@ else
   echo "    flake.nix already matches \"$REAL_USER\", nothing to do."
 fi
 
-echo "==> Step 4: first darwin-rebuild switch (pinned to nix-darwin-26.05)"
+echo "==> Step 4: preserve local configuration and merge public defaults"
+LOCAL_CONFIG_DIR="$HOME/.config/dotfiles-local"
+mkdir -p "$LOCAL_CONFIG_DIR" "$LOCAL_CONFIG_DIR/pi-extensions"
+
+copy_if_missing() {
+  local source="$1"
+  local fallback="$2"
+  local destination="$3"
+  if [ -e "$destination" ] || [ -L "$destination" ]; then
+    return
+  fi
+  if [ -e "$source" ] || [ -L "$source" ]; then
+    cp -p "$source" "$destination"
+  else
+    cp -p "$fallback" "$destination"
+  fi
+}
+
+# Keep personal or path-specific configuration outside this public repository.
+copy_if_missing "$HOME/.claude/settings.json" "$DIR/home/.claude/settings.json" \
+  "$LOCAL_CONFIG_DIR/claude-settings.json"
+copy_if_missing "$HOME/.claude/CLAUDE.md" "$DIR/home/AGENTS.md" \
+  "$LOCAL_CONFIG_DIR/claude-CLAUDE.md"
+copy_if_missing "$HOME/.codex/AGENTS.md" "$DIR/home/AGENTS.md" \
+  "$LOCAL_CONFIG_DIR/codex-AGENTS.md"
+if [ ! -e "$LOCAL_CONFIG_DIR/zshrc" ] && [ ! -L "$LOCAL_CONFIG_DIR/zshrc" ]; then
+  if [ -e "$HOME/.zshrc" ] || [ -L "$HOME/.zshrc" ]; then
+    cp -p "$HOME/.zshrc" "$LOCAL_CONFIG_DIR/zshrc"
+  else
+    touch "$LOCAL_CONFIG_DIR/zshrc"
+  fi
+fi
+
+# Merge existing local Pi extensions first, then add public repository-authored
+# extensions without replacing same-named local entries.
+if [ -d "$HOME/.pi/agent/extensions" ]; then
+  for entry in "$HOME/.pi/agent/extensions"/*; do
+    [ -e "$entry" ] || [ -L "$entry" ] || continue
+    name="${entry##*/}"
+    destination="$LOCAL_CONFIG_DIR/pi-extensions/$name"
+    if [ ! -e "$destination" ] && [ ! -L "$destination" ]; then
+      cp -R "$entry" "$destination"
+    fi
+  done
+fi
+for entry in "$DIR/home/.pi/agent/extensions"/*; do
+  [ -e "$entry" ] || [ -L "$entry" ] || continue
+  name="${entry##*/}"
+  destination="$LOCAL_CONFIG_DIR/pi-extensions/$name"
+  if [ ! -e "$destination" ] && [ ! -L "$destination" ]; then
+    ln -s "$entry" "$destination"
+  fi
+done
+
+echo "    Private local overlay ready at $LOCAL_CONFIG_DIR"
+
+echo "==> Step 5: first darwin-rebuild switch (pinned to nix-darwin-26.05)"
 # darwin-rebuild doesn't exist yet on a fresh machine, so run it straight
 # from the flake this once. After this, rebuild.sh works normally.
 # This fetches the darwin-rebuild tool from the nix-darwin-26.05 release branch,
